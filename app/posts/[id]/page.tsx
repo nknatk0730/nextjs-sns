@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { createComment } from "@/lib/actions";
 import { fetchPostWithComments } from "@/lib/apis";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,10 +10,9 @@ export default async function PostDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-
   const { id } = await params;
-
   const post = await fetchPostWithComments(id);
+  const CreateCommentWithPostId = createComment.bind(null, id);
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -61,7 +61,7 @@ export default async function PostDetailPage({
               </div>
             ))}
           </div>
-          <form>
+          <form action={CreateCommentWithPostId}>
             <div className="mt-2 flex gap-2">
               <Input name="text" placeholder="add comment" />
               <Button type="submit">Send</Button>

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { deletePost, updatePost } from "@/lib/actions";
 import { fetchPost } from "@/lib/apis";
 import Image from "next/image";
 import Link from "next/link";
@@ -27,15 +28,17 @@ export default async function PostEditPage({ params }: { params: Promise<{ id: s
               </div>
             </div>
           </div>
-          <form>
+          <form action={updatePost}>
             <h3 className="mt-2 font-semibold mb-2">Caption</h3>
+            <input type="hidden" name="postId" value={post.id} />
             <Textarea name="caption" defaultValue={post.caption}></Textarea>
             <div className="mt-4 flex items-center">
               <Button type="submit">update</Button>
               <Link className="ml-4 rounded border p-2 text-sm" href={`/posts/${post.id}`}>back post</Link>
             </div>
           </form>
-          <form className="mt-4">
+          <form action={deletePost} className="mt-4">
+            <input type="hidden" name="postId" value={post.id} />
             <Button type="submit" variant='destructive'>Delete</Button>
           </form>
         </div>

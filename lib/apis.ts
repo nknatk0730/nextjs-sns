@@ -175,4 +175,23 @@ export const fetchUser = async (id: string) => {
   }
 }
 
-export const fetchMe = async () => {}
+export const fetchMe = async () => {
+  const email = 'alice@prisma.io';
+
+  try {
+    const user = await prisma.user.findFirstOrThrow({
+      where: { email },
+      select: {
+        name: true,
+        email: true,
+        image: true,
+        description: true,
+      },
+    });
+
+    return user;
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    throw new Error('Failed to fetch user data');   
+  }
+}
