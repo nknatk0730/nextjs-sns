@@ -4,24 +4,61 @@ import { redirect } from "next/navigation";
 import prisma from "./prisma";
 import * as argon2 from "argon2";
 import { revalidatePath } from "next/cache";
+import { put } from "@vercel/blob";
+import { z } from "zod";
 
-export const registerUser = async (formData: FormData) => {
-  const name = formData.get('name') as string;
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
-  const confirmPassword = formData.get('confirmPassword') as string;
-
+const registerUserSchema = z.object({
+  name: z.string().min(1, { message: 'Name is required' }),
+  email: z.string().email({ message: 'Invalid email address' }),
+  password: z.string().min(8, { message: 'Password must be at least 8 characters long' }),
+  confirmPassword: z.string().min(8, { message: 'Confirm password is required' }),
+})
+.refine((data) => {
+  const { password, confirmPassword } = data;
+  return password === confirmPassword;
+}, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'], 
+})
+.refine(async (data) => {
+  const { email } = data;
   const user = await prisma.user.findFirst({
     where: { email },
   });
 
-  if (user) {
-    return 'User already exists';
+  return !user;
+}, {
+  message: 'Email already exists',
+  path: ['email'],
+});
+
+type RegisterUserState  = {
+  errors?: {
+    name?: string[];
+    email?: string[];
+    password?: string[];
+    confirmPassword?: string[];
+  }
+  message?: string | null;
+}
+
+export const registerUser = async (state: RegisterUserState, formData: FormData): Promise<RegisterUserState> => {
+  const validationResult = await registerUserSchema.safeParseAsync({
+    name: formData.get('name') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    confirmPassword: formData.get('confirmPassword') as string,
+  });
+
+  if (!validationResult.success) {
+    return {
+      errors: validationResult.error.flatten().fieldErrors,
+      message: 'Invalid input',
+    }
   }
 
-  if (password !== confirmPassword) {
-    return 'Passwords do not match';
-  }
+  const { name, email, password } = validationResult.data;
+
 
   const hashedPassword = await argon2.hash(password);
 
@@ -33,9 +70,14 @@ export const registerUser = async (formData: FormData) => {
         password: hashedPassword,
       },
     });
+
+    return {
+      errors: {},
+      message: 'User created successfully',
+    }
   } catch (error) {
     console.error('Error creating user:', error);
-    return 'Error creating user';
+    return new Error('Error creating user');
   }
 }
 
@@ -59,7 +101,7 @@ export const updatePost = async (formData: FormData) => {
 
 export const deletePost = async (formData: FormData) => {
   const postId = formData.get('postId') as string;
-  const email = 'alice@prisma.io';
+  const email = 'bob@prisma.io';
 
   const user = await prisma.user.findFirstOrThrow({
     where: { email },
@@ -105,17 +147,47 @@ export const updateMe = async (formData: FormData) => {
     where: { email },
   });
 
-  const name = formData.get('name') as string;
-  const description = formData.get('description') as string | null;
+  const data = {
+    name: formData.get('name') as string,
+    description: formData.get('description') as string | null,
+    image: user.image,
+  }
+
+  const image = formData.get('image') as File | null;
+  if (image) {
+      const blob = await put(image.name, image, {
+        access: 'public',
+      });
+
+      data.image = blob.url;
+  }
 
   await prisma.user.update({
     where: { id: user.id },
-    data: {
-      name,
-      description,
-      image: user.image,
-    },
+    data,
   });
 
+  redirect('/dashboard');
+}
+
+export const createPost = async (formData: FormData) => {
+  const email = 'alice@prisma.io';
+  const caption = formData.get('caption') as string;
+  const image = formData.get('image') as File;
+  const blob = await put(image.name, image, {
+    access: 'public',
+  });
+
+  const user = await prisma.user.findFirstOrThrow({
+    where: { email },
+  });
+
+  await prisma.post.create({
+    data: {
+      caption,
+      image: blob.url,
+      userId: user.id,
+    },
+  });
   redirect('/dashboard');
 }

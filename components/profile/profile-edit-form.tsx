@@ -25,6 +25,11 @@ export const ProfileEditForm = ({
           <Input className="mt-1" type="text" defaultValue={user.description} name="description" />
         </div>
       )}
+      {/* profile image update */}
+      <div>
+        <Label className="text-sm font-medium text-gray-700">Profile image</Label>
+        <Input className="mt-1" type="file" name="image" />
+      </div>
       <div>
         <Button type='submit'>Send</Button>
       </div>

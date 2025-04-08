@@ -10,7 +10,7 @@ export default async function PostsPage() {
       <div className="grid grid-cols-3 gap-1">
         {posts.map((post) => (
           <Link href={`/posts/${post.id}/edit`} key={post.id}>
-            <Image className="aspect-[1/1] w-full object-cover" src='/landscape.png' alt="post" width={300} height={300} />
+            <Image className="aspect-[1/1] w-full object-cover" src={post.image} alt="post" width={300} height={300} />
             <div className="flex items-center justify-between border p-1">
               <div className="flex items-center">
                 {post.user.image && (
