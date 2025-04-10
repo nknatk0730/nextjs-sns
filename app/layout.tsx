@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Image from "next/image";
 import Link from "next/link";
+import { logout } from "@/lib/actions";
+import { Button } from "@/components/ui/button";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +43,9 @@ export default function RootLayout({
                 <div className="space-x-8">
                   <Link href='/login' className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900">Login</Link>
                   <Link href='/register' className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900">Register</Link>
+                  <form className="inline-flex" action={logout}>
+                    <Button variant='destructive'>Logout</Button>
+                  </form>
                 </div>
               </div>
             </div>

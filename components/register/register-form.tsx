@@ -13,11 +13,11 @@ export default function RegisterForm() {
     message: null,
   };
 
-  const [state, action] = useActionState(registerUser, initialState);    
+  const [state, action, isPending] = useActionState(registerUser, initialState);    
 
   return (
     <div>
-      <form action={action}>
+      <form action={action} className={isPending ? 'opacity-50' : ''}>
         <div>
           <Label className="text-sm font-medium text-gray-700">User Name</Label>
           <Input name="name" className="mt-1" />
@@ -63,7 +63,7 @@ export default function RegisterForm() {
           </div>
         </div>
         <div className="mt-8 flex items-center justify-end">
-          <Button type="submit">Register</Button>
+          <Button disabled={isPending} type="submit">Register</Button>
         </div>
       </form>
       <div className="space-y-2">

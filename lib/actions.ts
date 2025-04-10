@@ -2,10 +2,12 @@
 
 import { redirect } from "next/navigation";
 import prisma from "./prisma";
-import * as argon2 from "argon2";
 import { revalidatePath } from "next/cache";
 import { put } from "@vercel/blob";
 import { z } from "zod";
+import { signIn, signOut } from "@/auth";
+import { AuthError } from "next-auth";
+import bcrypt from "bcryptjs";
 
 const registerUserSchema = z.object({
   name: z.string().min(1, { message: 'Name is required' }),
@@ -42,6 +44,11 @@ type RegisterUserState  = {
   message?: string | null;
 }
 
+type LoginUserState  = {
+  success?: string | null;
+  error?: string | null;
+}
+
 export const registerUser = async (state: RegisterUserState, formData: FormData): Promise<RegisterUserState> => {
   const validationResult = await registerUserSchema.safeParseAsync({
     name: formData.get('name') as string,
@@ -60,7 +67,7 @@ export const registerUser = async (state: RegisterUserState, formData: FormData)
   const { name, email, password } = validationResult.data;
 
 
-  const hashedPassword = await argon2.hash(password);
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   try {
     await prisma.user.create({
@@ -190,4 +197,36 @@ export const createPost = async (formData: FormData) => {
     },
   });
   redirect('/dashboard');
+}
+
+export const login = async (
+  state: LoginUserState,
+  formData: FormData,
+): Promise<LoginUserState> => {
+  try {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    await signIn("credentials", {
+      email,
+      password,
+    });
+
+    return { success: "Email sent" };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { error: "Invalid credentials" };
+        default:
+          return { error: "Something went wrong" };
+      }
+    }
+    throw error;
+  }
+}
+
+export const logout = async () => {
+  await signOut();
+  redirect('/login');
 }

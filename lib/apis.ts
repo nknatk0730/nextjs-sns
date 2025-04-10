@@ -1,11 +1,17 @@
+import { auth } from "@/auth";
 import prisma from "./prisma";
 
 export const fetchDashboard = async () => {
-  const email = 'alice@prisma.io';
+  const session = await auth();
 
+  if (!session?.user?.email) {
+    throw new Error('User not authenticated');
+  }
+  const email = session.user.email;
+  
   try {
     const user = await prisma.user.findFirstOrThrow({
-      where: {email},
+      where: { email },
       select: {
         id: true,
         name: true,
@@ -176,7 +182,12 @@ export const fetchUser = async (id: string) => {
 }
 
 export const fetchMe = async () => {
-  const email = 'alice@prisma.io';
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    throw new Error('User not authenticated');
+  }
+  const email = session.user.email;
 
   try {
     const user = await prisma.user.findFirstOrThrow({
